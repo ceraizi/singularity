@@ -1,0 +1,6 @@
+@singularity_HostAddress = http://localhost:5190
+
+GET {{singularity_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
