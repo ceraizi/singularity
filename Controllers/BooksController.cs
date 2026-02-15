@@ -39,7 +39,7 @@ public class BooksController : ControllerBase{
         var book = await _context.Books.FindAsync(id);
 
         if (book == null){
-            return NotFound(new {message = "Book not found"});
+            throw new AppException("Book not found", 404);
         }
 
         return book;
