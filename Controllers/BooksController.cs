@@ -11,16 +11,27 @@ namespace Singularity.Controllers;
 public class BooksController : ControllerBase{
     private readonly AppDbContext _context;
 
-    public BooksController(AppDbContext context)
-    {
+    public BooksController(AppDbContext context){
         _context = context;
     }
 
-    // GET: api/books
+
+    // GET: api/books?title=...&author=...
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Book>>> GetBooks(){
-        return await _context.Books.ToListAsync();
+    public async Task<ActionResult<IEnumerable<Book>>> GetBooks([FromQuery] string? title, [FromQuery] string? author){
+        var query = _context.Books.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(title)){
+            query = query.Where(b => b.Title.ToLower().Contains(title.ToLower()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(author)){
+            query = query.Where(b => b.Author.ToLower().Contains(author.ToLower()));
+        }
+
+        return await query.ToListAsync();
     }
+
 
     // GET: api/books/{id}
     [HttpGet("{id}")]
