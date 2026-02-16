@@ -19,14 +19,14 @@ public class BooksController : ControllerBase{
     // GET: api/books?title=...&author=...
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Book>>> GetBooks([FromQuery] string? title, [FromQuery] string? author){
-        var query = _context.Books.AsQueryable();
+        var query = _context.Books.Include(b => b.Author).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(title)){
             query = query.Where(b => b.Title.ToLower().Contains(title.ToLower()));
         }
 
         if (!string.IsNullOrWhiteSpace(author)){
-            query = query.Where(b => b.Author.ToLower().Contains(author.ToLower()));
+            query = query.Where(b => b.Author != null && b.Author.Name.ToLower().Contains(author.ToLower()));
         }
 
         return await query.ToListAsync();
@@ -36,7 +36,7 @@ public class BooksController : ControllerBase{
     // GET: api/books/{id}
     [HttpGet("{id}")]
     public async Task<ActionResult<Book>> GetBook(int id){
-        var book = await _context.Books.FindAsync(id);
+        var book = await _context.Books.Include(b => b.Author).FirstOrDefaultAsync(b => b.Id == id);
 
         if (book == null){
             throw new AppException("Book not found", 404);
@@ -50,7 +50,7 @@ public class BooksController : ControllerBase{
     public async Task<ActionResult<Book>> PostBook(CreateBookDto bookDto){
         var book = new Book{
             Title = bookDto.Title,
-            Author = bookDto.Author
+            AuthorId = bookDto.AuthorId
         };
 
         _context.Books.Add(book);
@@ -69,7 +69,7 @@ public class BooksController : ControllerBase{
         }
 
         book.Title = bookDto.Title;
-        book.Author = bookDto.Author;
+        book.AuthorId = bookDto.AuthorId;
 
         await _context.SaveChangesAsync();
 
