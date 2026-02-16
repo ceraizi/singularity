@@ -58,4 +58,36 @@ public class BooksController : ControllerBase{
 
         return CreatedAtAction(nameof(GetBooks), new {id = book.Id}, book);
     }
+
+    // PUT: api/books/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateBook(int id, CreateBookDto bookDto){
+        var book = await _context.Books.FindAsync(id);
+
+        if (book == null){
+            throw new AppException("Book not found", 404);
+        }
+
+        book.Title = bookDto.Title;
+        book.Author = bookDto.Author;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // DELETE: api/books/{id}
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteBook(int id){
+        var book = await _context.Books.FindAsync(id);
+
+        if (book == null){
+            throw new AppException("Book not found", 404);
+        }
+
+        _context.Books.Remove(book);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
