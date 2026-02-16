@@ -29,7 +29,16 @@ public class BooksController : ControllerBase{
             query = query.Where(b => b.Author != null && b.Author.Name.ToLower().Contains(author.ToLower()));
         }
 
-        return await query.ToListAsync();
+        var books = await query.ToListAsync();
+
+        var response = books.Select(b => new BookReadDto{
+            Id = b.Id,
+            Title = b.Title,
+            AuthorId = b.AuthorId,
+            AuthorName = b.Author?.Name ?? "Unknown Author"
+        });
+
+        return Ok(response);
     }
 
 
