@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Singularity.Data;
 using Singularity.DTOs;
 using Singularity.Models;
-
+using Microsoft.AspNetCore.Authorization;
 namespace Singularity.Controllers;
 
 [ApiController]
@@ -55,20 +55,30 @@ public class BooksController : ControllerBase{
     }
 
     // POST: api/books
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<Book>> PostBook(CreateBookDto bookDto){
+        var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower() == bookDto.AuthorName.ToLower());
+
+        if (author == null){
+            author = new Author { Name = bookDto.AuthorName };
+            _context.Authors.Add(author);
+            await _context.SaveChangesAsync();
+        }
+
         var book = new Book{
             Title = bookDto.Title,
-            AuthorId = bookDto.AuthorId
+            AuthorId = author.Id
         };
 
         _context.Books.Add(book);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetBooks), new {id = book.Id}, book);
+        return CreatedAtAction(nameof(GetBook), new {id = book.Id}, book);
     }
 
     // PUT: api/books/{id}
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBook(int id, CreateBookDto bookDto){
         var book = await _context.Books.FindAsync(id);
@@ -77,8 +87,16 @@ public class BooksController : ControllerBase{
             throw new AppException("Book not found", 404);
         }
 
+        var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower() == bookDto.AuthorName.ToLower());
+
+        if (author == null){
+            author = new Author { Name = bookDto.AuthorName };
+            _context.Authors.Add(author);
+            await _context.SaveChangesAsync();
+        }
+
         book.Title = bookDto.Title;
-        book.AuthorId = bookDto.AuthorId;
+        book.AuthorId = author.Id;
 
         await _context.SaveChangesAsync();
 
@@ -86,6 +104,7 @@ public class BooksController : ControllerBase{
     }
 
     // DELETE: api/books/{id}
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBook(int id){
         var book = await _context.Books.FindAsync(id);
