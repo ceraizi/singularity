@@ -4,15 +4,18 @@ using Singularity.Data;
 using Singularity.DTOs;
 using Singularity.Models;
 using Microsoft.AspNetCore.Authorization;
+using Singularity.Services;
 namespace Singularity.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class BooksController : ControllerBase{
     private readonly AppDbContext _context;
+    private readonly IAuthorService _authorService;
 
-    public BooksController(AppDbContext context){
+    public BooksController(AppDbContext context, IAuthorService authorService){
         _context = context;
+        _authorService = authorService;
     }
 
 
@@ -58,13 +61,7 @@ public class BooksController : ControllerBase{
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<Book>> PostBook(CreateBookDto bookDto){
-        var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower() == bookDto.AuthorName.ToLower());
-
-        if (author == null){
-            author = new Author { Name = bookDto.AuthorName };
-            _context.Authors.Add(author);
-            await _context.SaveChangesAsync();
-        }
+        var author = await _authorService.GetOrCreateAuthorAsync(bookDto.AuthorName);
 
         var book = new Book{
             Title = bookDto.Title,
@@ -87,13 +84,7 @@ public class BooksController : ControllerBase{
             throw new AppException("Book not found", 404);
         }
 
-        var author = await _context.Authors.FirstOrDefaultAsync(a => a.Name.ToLower() == bookDto.AuthorName.ToLower());
-
-        if (author == null){
-            author = new Author { Name = bookDto.AuthorName };
-            _context.Authors.Add(author);
-            await _context.SaveChangesAsync();
-        }
+        var author = await _authorService.GetOrCreateAuthorAsync(bookDto.AuthorName);
 
         book.Title = bookDto.Title;
         book.AuthorId = author.Id;
